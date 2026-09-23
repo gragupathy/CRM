@@ -29,6 +29,7 @@ export async function saveCompany(
   const session = await requireRole(["ADMIN"]);
   const name = titleCase(String(formData.get("name") ?? "").trim());
   const legalName = emptyToNull(String(formData.get("legalName") ?? "").toUpperCase());
+  const shortName = emptyToNull(titleCase(String(formData.get("shortName") ?? "").trim()));
   const email = emptyToNull(String(formData.get("email") ?? "").trim());
   const mobile = emptyToNull(String(formData.get("mobile") ?? "").replace(/\D/g, ""));
   const address = emptyToNull(titleCase(String(formData.get("address") ?? "").trim()));
@@ -38,17 +39,24 @@ export async function saveCompany(
   const bankName = emptyToNull(String(formData.get("bankName") ?? "").trim());
   const bankAccountNo = emptyToNull(String(formData.get("bankAccountNo") ?? "").replace(/\D/g, ""));
   const bankHolder = emptyToNull(titleCase(String(formData.get("bankHolder") ?? "").trim()));
+  const bankAccountType = emptyToNull(String(formData.get("bankAccountType") ?? "").trim());
   const bankIfsc = emptyToNull(String(formData.get("bankIfsc") ?? "").trim().toUpperCase());
-  const bankAddress = emptyToNull(titleCase(String(formData.get("bankAddress") ?? "").trim()));
+  const bankAddress = emptyToNull(String(formData.get("bankAddress") ?? "").trim());
 
   const invalid = validateCompanyFields({
     name,
     email,
     mobile,
+    address,
+    city,
+    state,
     postalCode,
     bankAccountNo,
     bankIfsc,
     bankName,
+    bankHolder,
+    bankAccountType,
+    bankAddress,
   });
   if (invalid) return { error: invalid };
 
@@ -75,6 +83,7 @@ export async function saveCompany(
     data: {
       name,
       legalName,
+      shortName,
       email,
       mobile,
       address,
@@ -85,13 +94,14 @@ export async function saveCompany(
       bankName,
       bankAccountNo,
       bankHolder,
+      bankAccountType,
       bankIfsc,
       bankAddress,
       ...(logoPath ? { logoPath, logoMime } : {}),
     },
   });
   revalidatePath("/settings/company");
-  revalidatePath("/");
+  revalidatePath("/", "layout");
   return { saved: true };
 }
 

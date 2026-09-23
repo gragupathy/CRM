@@ -12,6 +12,7 @@ model Tenant {
   name      String
   slug      String   @unique
   legalName String?
+  shortName String?
   email     String?
   mobile    String?
   logoPath  String?
@@ -24,6 +25,7 @@ model Tenant {
   bankName  String?
   bankAccountNo String?
   bankHolder    String?
+  bankAccountType String?
   bankIfsc      String?
   bankAddress   String?
   createdAt DateTime @default(now())

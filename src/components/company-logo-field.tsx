@@ -105,25 +105,25 @@ export function CompanyLogoField({
   }
 
   return (
-    <div className="flex items-start gap-3">
+    <div>
       <div
-        className="flex items-center justify-center overflow-hidden rounded-2xl bg-[#e4edf5]"
+        className="relative overflow-hidden rounded-2xl bg-[#e4edf5]"
         style={{ width: LOGO_DISPLAY_SIZE, height: LOGO_DISPLAY_SIZE }}
       >
         {preview ? (
           <img src={preview} alt="Company logo" className="h-full w-full object-cover" />
         ) : (
-          <Building2 className="text-slate-300" size={52} strokeWidth={1.25} />
+          <div className="flex h-full w-full items-center justify-center">
+            <Building2 className="text-slate-300" size={52} strokeWidth={1.25} />
+          </div>
         )}
-      </div>
-      <div className="pt-1">
         <button
           type="button"
-          className="rounded-md p-1.5 text-slate-500 hover:bg-slate-100 hover:text-ink-800"
-          title="Upload company logo (JPG or PNG, max 2 MB)"
+          className="absolute bottom-1.5 right-1.5 rounded-md bg-white/90 p-1 text-slate-500 shadow-sm hover:bg-white hover:text-ink-800"
+          title="JPG or PNG, max 2 MB"
           onClick={() => inputRef.current?.click()}
         >
-          <Paperclip size={18} />
+          <Paperclip size={16} />
         </button>
         <input
           ref={inputRef}
@@ -133,9 +133,8 @@ export function CompanyLogoField({
           className="hidden"
           onChange={(e) => void onPick(e.target.files?.[0])}
         />
-        <p className="mt-1 max-w-[9rem] text-[11px] leading-snug text-slate-400">JPG or PNG, max 2 MB</p>
-        {error ? <p className="mt-1 text-xs text-rose-600">{error}</p> : null}
       </div>
+      {error ? <p className="mt-1 text-xs text-rose-600">{error}</p> : null}
     </div>
   );
 }

@@ -13,6 +13,7 @@ export default async function CompanySettingsPage() {
       values={{
         name: tenant.name,
         legalName: tenant.legalName,
+        shortName: tenant.shortName,
         email: tenant.email,
         mobile: tenant.mobile,
         hasLogo: Boolean(tenant.logoPath),
@@ -27,6 +28,7 @@ export default async function CompanySettingsPage() {
         bankName: tenant.bankName,
         bankAccountNo: tenant.bankAccountNo,
         bankHolder: tenant.bankHolder,
+        bankAccountType: tenant.bankAccountType,
         bankIfsc: tenant.bankIfsc,
         bankAddress: tenant.bankAddress,
       }}

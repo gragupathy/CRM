@@ -32,9 +32,11 @@ const nav = [
 
 export function AppShell({
   user,
+  companyLogoSrc,
   children,
 }: {
   user: SessionUser;
+  companyLogoSrc?: string | null;
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
@@ -52,9 +54,17 @@ export function AppShell({
     <div className="min-h-screen md:flex">
       <aside className="border-b border-slate-800 bg-ink-950 text-slate-200 md:flex md:w-60 md:flex-col md:border-b-0 md:border-r">
         <div className="flex items-center gap-2 px-5 py-5">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand-600 text-sm font-bold text-white">
-            HM
-          </div>
+          {companyLogoSrc ? (
+            <img
+              src={companyLogoSrc}
+              alt="Company logo"
+              className="h-8 w-8 rounded-lg object-cover"
+            />
+          ) : (
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand-600 text-sm font-bold text-white">
+              HM
+            </div>
+          )}
           <div>
             <p className="text-sm font-semibold text-white">HM CRM</p>
             <p className="text-[11px] uppercase tracking-wide text-slate-400">Sales</p>

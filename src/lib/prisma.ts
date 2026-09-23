@@ -1,6 +1,6 @@
 import { PrismaClient } from "@prisma/client";
 
-const SCHEMA_VERSION = "company-settings";
+const SCHEMA_VERSION = "company-account-type";
 
 const globalForPrisma = globalThis as unknown as {
   prisma?: PrismaClient;
