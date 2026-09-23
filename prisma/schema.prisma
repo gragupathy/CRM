@@ -11,6 +11,21 @@ model Tenant {
   id        String   @id @default(cuid())
   name      String
   slug      String   @unique
+  legalName String?
+  email     String?
+  mobile    String?
+  logoPath  String?
+  logoMime  String?
+  address   String?
+  city      String?
+  state     String?
+  postalCode String?
+  country   String   @default("India")
+  bankName  String?
+  bankAccountNo String?
+  bankHolder    String?
+  bankIfsc      String?
+  bankAddress   String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 

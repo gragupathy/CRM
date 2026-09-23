@@ -11,6 +11,89 @@ import { parseEmail } from "@/lib/email";
 import { appUrl, issueToken } from "@/lib/tokens";
 import { sendInviteEmail } from "@/lib/mail";
 import crypto from "crypto";
+import { writeFile, unlink } from "fs/promises";
+import { titleCase } from "@/lib/utils";
+import { validateCompanyFields, type CompanyFormState } from "@/lib/company-validation";
+import { isAllowedLogoFile } from "@/lib/company-logo";
+import { companyLogoDiskPath, ensureCompanyLogoDir } from "@/lib/company-logo-fs";
+
+function emptyToNull(value: string) {
+  const v = value.trim();
+  return v ? v : null;
+}
+
+export async function saveCompany(
+  _prev: CompanyFormState,
+  formData: FormData,
+): Promise<CompanyFormState> {
+  const session = await requireRole(["ADMIN"]);
+  const name = titleCase(String(formData.get("name") ?? "").trim());
+  const legalName = emptyToNull(String(formData.get("legalName") ?? "").toUpperCase());
+  const email = emptyToNull(String(formData.get("email") ?? "").trim());
+  const mobile = emptyToNull(String(formData.get("mobile") ?? "").replace(/\D/g, ""));
+  const address = emptyToNull(titleCase(String(formData.get("address") ?? "").trim()));
+  const city = emptyToNull(titleCase(String(formData.get("city") ?? "").trim()));
+  const state = emptyToNull(String(formData.get("state") ?? "").trim());
+  const postalCode = emptyToNull(String(formData.get("postalCode") ?? "").replace(/\D/g, ""));
+  const bankName = emptyToNull(String(formData.get("bankName") ?? "").trim());
+  const bankAccountNo = emptyToNull(String(formData.get("bankAccountNo") ?? "").replace(/\D/g, ""));
+  const bankHolder = emptyToNull(titleCase(String(formData.get("bankHolder") ?? "").trim()));
+  const bankIfsc = emptyToNull(String(formData.get("bankIfsc") ?? "").trim().toUpperCase());
+  const bankAddress = emptyToNull(titleCase(String(formData.get("bankAddress") ?? "").trim()));
+
+  const invalid = validateCompanyFields({
+    name,
+    email,
+    mobile,
+    postalCode,
+    bankAccountNo,
+    bankIfsc,
+    bankName,
+  });
+  if (invalid) return { error: invalid };
+
+  const logo = formData.get("logo");
+  let logoPath: string | undefined;
+  let logoMime: string | undefined;
+  if (logo instanceof File && logo.size > 0) {
+    const logoError = isAllowedLogoFile(logo);
+    if (logoError) return { error: logoError };
+    await ensureCompanyLogoDir(session.tenantId);
+    const diskPath = companyLogoDiskPath(session.tenantId);
+    try {
+      await unlink(diskPath);
+    } catch {
+      /* first upload */
+    }
+    await writeFile(diskPath, Buffer.from(await logo.arrayBuffer()));
+    logoPath = `${session.tenantId}/logo`;
+    logoMime = logo.type || "image/png";
+  }
+
+  await prisma.tenant.update({
+    where: { id: session.tenantId },
+    data: {
+      name,
+      legalName,
+      email,
+      mobile,
+      address,
+      city,
+      state,
+      postalCode,
+      country: "India",
+      bankName,
+      bankAccountNo,
+      bankHolder,
+      bankIfsc,
+      bankAddress,
+      ...(logoPath ? { logoPath, logoMime } : {}),
+    },
+  });
+  revalidatePath("/settings/company");
+  revalidatePath("/");
+  return { saved: true };
+}
 
 export async function createUser(formData: FormData) {
   const session = await requireRole(["ADMIN"]);

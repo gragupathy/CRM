@@ -1,6 +1,6 @@
 import { PrismaClient } from "@prisma/client";
 
-const SCHEMA_VERSION = "contact-child-records";
+const SCHEMA_VERSION = "company-settings";
 
 const globalForPrisma = globalThis as unknown as {
   prisma?: PrismaClient;

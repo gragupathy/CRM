@@ -38,14 +38,14 @@ export function AppShell({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
-  const settings = [
-    ...(user.role === "ADMIN"
+  const settings =
+    user.role === "ADMIN"
       ? [
-          { href: "/settings/users", label: "Users & roles" },
-          { href: "/settings/fields", label: "Custom fields" },
+          { href: "/settings/company", label: "Company", icon: Building2 },
+          { href: "/settings/users", label: "Users & roles", icon: Users },
+          { href: "/settings/fields", label: "Custom fields", icon: Settings2 },
         ]
-      : []),
-  ];
+      : [];
 
   return (
     <ToastProvider>
@@ -84,10 +84,11 @@ export function AppShell({
           {settings.length > 0 ? (
             <div className="mt-4 hidden md:block">
               <p className="px-3 pb-1 text-[11px] font-semibold uppercase tracking-wide text-slate-500">
-                Setup
+                Settings
               </p>
               {settings.map((item) => {
                 const active = pathname.startsWith(item.href);
+                const Icon = item.icon;
                 return (
                   <Link
                     key={item.href}
@@ -99,7 +100,7 @@ export function AppShell({
                         : "text-slate-400 hover:bg-white/5 hover:text-white",
                     )}
                   >
-                    {item.href.includes("users") ? <Users size={16} /> : <Settings2 size={16} />}
+                    <Icon size={16} />
                     {item.label}
                   </Link>
                 );
