@@ -1,0 +1,365 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Tenant {
+  id        String   @id @default(cuid())
+  name      String
+  slug      String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  users        User[]
+  accounts     Account[]
+  contacts     Contact[]
+  leads        Lead[]
+  deals        Deal[]
+  activities   Activity[]
+  leadActivities LeadActivity[]
+  leadTasks      LeadTask[]
+  leadNotes      LeadNote[]
+  leadAttachments LeadAttachment[]
+  customFields CustomField[]
+}
+
+model User {
+  id              String    @id @default(cuid())
+  tenantId        String
+  email           String
+  name            String
+  passwordHash    String
+  role            String    @default("SALES")
+  isActive        Boolean   @default(true)
+  emailVerifiedAt DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  tenant           Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  ownedAccounts    Account[]
+  ownedContacts    Contact[]
+  ownedLeads       Lead[]
+  createdLeads     Lead[]     @relation("LeadCreatedBy")
+  modifiedLeads    Lead[]     @relation("LeadModifiedBy")
+  createdContacts  Contact[]  @relation("ContactCreatedBy")
+  modifiedContacts Contact[]  @relation("ContactModifiedBy")
+  ownedDeals       Deal[]
+  ownedActivities  Activity[]
+  ownedLeadActivities LeadActivity[]
+  ownedLeadTasks      LeadTask[]
+  ownedLeadNotes      LeadNote[]
+  ownedLeadAttachments LeadAttachment[]
+  authTokens       AuthToken[]
+
+  @@unique([tenantId, email])
+  @@index([tenantId])
+}
+
+model AuthToken {
+  id        String    @id @default(cuid())
+  userId    String
+  type      String
+  tokenHash String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, type])
+}
+
+model Account {
+  id            String   @id @default(cuid())
+  tenantId      String
+  ownerId       String
+  name          String
+  industry      String?
+  website       String?
+  phone         String?
+  email         String?
+  address       String?
+  city          String?
+  customValues  String   @default("{}")
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  tenant     Tenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  owner      User       @relation(fields: [ownerId], references: [id])
+  contacts   Contact[]
+  deals      Deal[]
+  activities Activity[]
+
+  @@index([tenantId])
+  @@index([ownerId])
+}
+
+model Contact {
+  id            String   @id @default(cuid())
+  tenantId      String
+  ownerId       String
+  createdById   String?
+  modifiedById  String?
+  accountId     String?
+  firstName     String
+  lastName      String   @default("")
+  email         String?
+  phone         String?
+  mobile        String?
+  title         String?
+  addressLine1  String?
+  addressLine2  String?
+  city          String?
+  state         String?
+  country       String?
+  postalCode    String?
+  customValues  String   @default("{}")
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  tenant     Tenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  owner      User       @relation(fields: [ownerId], references: [id])
+  createdBy  User?      @relation("ContactCreatedBy", fields: [createdById], references: [id])
+  modifiedBy User?      @relation("ContactModifiedBy", fields: [modifiedById], references: [id])
+  account    Account?   @relation(fields: [accountId], references: [id], onDelete: SetNull)
+  deals      Deal[]
+  activities Activity[]
+  contactActivities LeadActivity[]
+  contactNotes      LeadNote[]
+  contactAttachments LeadAttachment[]
+
+  @@index([tenantId])
+  @@index([ownerId])
+  @@index([accountId])
+}
+
+model Lead {
+  id            String    @id @default(cuid())
+  tenantId      String
+  ownerId       String
+  createdById   String?
+  modifiedById  String?
+  leadNo        Int       @default(0)
+  leadType      String    @default("INDIVIDUAL")
+  firstName     String
+  lastName      String    @default("")
+  jobTitle      String?
+  email         String?
+  phone         String?
+  mobile        String?
+  website       String?
+  company       String?
+  industry      String?
+  source        String    @default("WEBSITE")
+  status        String    @default("NEW")
+  addressLine1  String?
+  addressLine2  String?
+  city          String?
+  state         String?
+  country       String?
+  postalCode    String?
+  score         Int       @default(0)
+  notes         String?
+  customValues  String    @default("{}")
+  convertedAt   DateTime?
+  convertedAccountId String?
+  convertedContactId String?
+  convertedDealId    String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  tenant     Tenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  owner      User       @relation(fields: [ownerId], references: [id])
+  createdBy  User?      @relation("LeadCreatedBy", fields: [createdById], references: [id])
+  modifiedBy User?      @relation("LeadModifiedBy", fields: [modifiedById], references: [id])
+  activities Activity[]
+  leadActivities LeadActivity[]
+  tasks          LeadTask[]
+  leadNotes      LeadNote[]
+  leadAttachments LeadAttachment[]
+
+  @@index([tenantId])
+  @@index([tenantId, leadNo])
+  @@index([ownerId])
+  @@index([status])
+}
+
+model Deal {
+  id               String    @id @default(cuid())
+  tenantId         String
+  ownerId          String
+  accountId        String?
+  contactId        String?
+  name             String
+  amount           Float     @default(0)
+  currency         String    @default("INR")
+  stage            String    @default("QUALIFICATION")
+  probability      Int       @default(10)
+  expectedClose    DateTime?
+  closedAt         DateTime?
+  lostReason       String?
+  customValues     String    @default("{}")
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  tenant     Tenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  owner      User       @relation(fields: [ownerId], references: [id])
+  account    Account?   @relation(fields: [accountId], references: [id], onDelete: SetNull)
+  contact    Contact?   @relation(fields: [contactId], references: [id], onDelete: SetNull)
+  activities Activity[]
+
+  @@index([tenantId])
+  @@index([ownerId])
+  @@index([stage])
+}
+
+model Activity {
+  id          String    @id @default(cuid())
+  tenantId    String
+  ownerId     String
+  type        String
+  subject     String
+  body        String?
+  dueAt       DateTime?
+  completedAt DateTime?
+  accountId   String?
+  contactId   String?
+  leadId      String?
+  dealId      String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  tenant  Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  owner   User     @relation(fields: [ownerId], references: [id])
+  account Account? @relation(fields: [accountId], references: [id], onDelete: SetNull)
+  contact Contact? @relation(fields: [contactId], references: [id], onDelete: SetNull)
+  lead    Lead?    @relation(fields: [leadId], references: [id], onDelete: SetNull)
+  deal    Deal?    @relation(fields: [dealId], references: [id], onDelete: SetNull)
+
+  @@index([tenantId])
+  @@index([ownerId])
+}
+
+model LeadActivity {
+  id          String    @id @default(cuid())
+  tenantId    String
+  leadId      String?
+  contactId   String?
+  ownerId     String
+  type        String    @default("CALL")
+  subject     String
+  body        String?
+  occurredAt  DateTime  @default(now())
+  endedAt     DateTime?
+  venue       String?
+  reminderOffset String  @default("NONE")
+  remindAt    DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  tenant  Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  lead    Lead?    @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  contact Contact? @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  owner   User     @relation(fields: [ownerId], references: [id])
+
+  @@index([leadId])
+  @@index([contactId])
+  @@index([tenantId, leadId])
+  @@index([tenantId, contactId])
+  @@index([ownerId])
+  @@map("lead_activities")
+}
+
+model LeadTask {
+  id          String    @id @default(cuid())
+  tenantId    String
+  leadId      String
+  ownerId     String
+  title       String
+  description String?
+  status      String    @default("OPEN")
+  priority    String    @default("NORMAL")
+  dueAt       DateTime?
+  completedAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  lead   Lead   @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  owner  User   @relation(fields: [ownerId], references: [id])
+
+  @@index([leadId])
+  @@index([tenantId, leadId])
+  @@index([ownerId])
+  @@index([status])
+  @@map("lead_tasks")
+}
+
+model LeadNote {
+  id        String   @id @default(cuid())
+  tenantId  String
+  leadId    String?
+  contactId String?
+  ownerId   String
+  body      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tenant  Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  lead    Lead?    @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  contact Contact? @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  owner   User     @relation(fields: [ownerId], references: [id])
+
+  @@index([leadId])
+  @@index([contactId])
+  @@index([tenantId, leadId])
+  @@index([tenantId, contactId])
+  @@index([ownerId])
+  @@map("lead_notes")
+}
+
+model LeadAttachment {
+  id          String   @id @default(cuid())
+  tenantId    String
+  leadId      String?
+  contactId   String?
+  ownerId     String
+  fileName    String
+  mimeType    String?
+  size        Int
+  storagePath String
+  createdAt   DateTime @default(now())
+
+  tenant  Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  lead    Lead?    @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  contact Contact? @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  owner   User     @relation(fields: [ownerId], references: [id])
+
+  @@index([leadId])
+  @@index([contactId])
+  @@index([tenantId, leadId])
+  @@index([tenantId, contactId])
+  @@index([ownerId])
+  @@map("lead_attachments")
+}
+
+model CustomField {
+  id         String  @id @default(cuid())
+  tenantId   String
+  objectType String
+  key        String
+  label      String
+  fieldType  String  @default("TEXT")
+  options    String  @default("[]")
+  required   Boolean @default(false)
+  sortOrder  Int     @default(0)
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, objectType, key])
+  @@index([tenantId, objectType])
+}
