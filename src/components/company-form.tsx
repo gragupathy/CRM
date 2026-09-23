@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useEffect, useRef, useState } from "react";
+import { useActionState, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { titleCase } from "@/lib/utils";
 import { INDIAN_STATES } from "@/lib/constants";
@@ -18,7 +18,6 @@ import {
   IFSC_PATTERN,
   accountNumberError,
   ifscError,
-  isValidIfsc,
   type CompanyFormState,
 } from "@/lib/company-validation";
 import { FormActions, SubmitButton } from "@/components/forms";
@@ -99,8 +98,6 @@ export function CompanyForm({
   const [accountType, setAccountType] = useState(values.bankAccountType ?? "");
   const [bankAddr, setBankAddr] = useState(values.bankAddress ?? "");
   const [ifsc, setIfsc] = useState((values.bankIfsc ?? "").toUpperCase());
-  const [ifscHint, setIfscHint] = useState("");
-  const skipIfscLookup = useRef(Boolean(values.bankIfsc && values.bankAddress));
   const ifscStem = bank ? `${bankIfscPrefix(bank) ?? ""}0` : "";
 
   function onBankChange(next: string) {
@@ -110,7 +107,6 @@ export function CompanyForm({
     setHolder("");
     setAccountType("");
     setBankAddr("");
-    setIfscHint("");
     const prefix = bankIfscPrefix(next);
     setIfsc(prefix ? `${prefix}0` : "");
   }
@@ -137,43 +133,6 @@ export function CompanyForm({
     }
     setIfsc(`${letters}${fifth}${tail}`);
   }
-
-  useEffect(() => {
-    if (skipIfscLookup.current) {
-      skipIfscLookup.current = false;
-      return;
-    }
-    if (!bank || !isValidIfsc(ifsc)) {
-      return;
-    }
-    const prefix = bankIfscPrefix(bank);
-    if (prefix && ifsc.slice(0, 4) !== prefix) return;
-    let cancelled = false;
-    setIfscHint("Looking up branch…");
-    const timer = window.setTimeout(() => {
-      void fetch(`/api/ifsc/${encodeURIComponent(ifsc)}?bank=${encodeURIComponent(bank)}`)
-        .then(async (res) => {
-          const data = (await res.json()) as { address?: string; error?: string };
-          if (cancelled) return;
-          if (!res.ok || data.error || !data.address) {
-            setBankAddr("");
-            setIfscHint(data.error || "No branch found for this IFSC.");
-            return;
-          }
-          setBankAddr(data.address);
-          setIfscHint("");
-        })
-        .catch(() => {
-          if (cancelled) return;
-          setBankAddr("");
-          setIfscHint("Could not look up this IFSC right now.");
-        });
-    }, 250);
-    return () => {
-      cancelled = true;
-      window.clearTimeout(timer);
-    };
-  }, [bank, ifsc]);
 
   useEffect(() => {
     if (state?.saved) {
@@ -441,12 +400,8 @@ export function CompanyForm({
                 required
                 value={bankAddr}
                 className={underline}
-                onChange={(e) => {
-                  setBankAddr(e.currentTarget.value);
-                  setIfscHint("");
-                }}
+                onChange={(e) => setBankAddr(e.currentTarget.value)}
               />
-              {ifscHint ? <p className="mt-1 text-xs text-slate-500">{ifscHint}</p> : null}
             </Row>
           </div>
         </section>
